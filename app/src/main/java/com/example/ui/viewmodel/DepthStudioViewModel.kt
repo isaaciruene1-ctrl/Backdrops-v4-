@@ -18,7 +18,6 @@ import com.example.data.model.LockScreenSetDoc
 import com.example.data.model.Wallpaper
 import com.example.data.repository.GuestLocalUserStore
 import com.example.data.weather.OpenMeteoWeatherRepository
-import com.example.engine.depth.DepthScanStage
 import com.example.data.weather.WeatherTelemetryState
 import com.example.engine.depth.ClockHorizontalAlign
 import com.example.engine.depth.DepthDetectionEngine
@@ -388,7 +387,14 @@ class DepthStudioViewModel(
     private fun applyCompositeLayersToCutout(layers: List<DepthSubjectLayer>) {
         val ready = _state.value as? DepthStudioUiState.Ready ?: return
         if (ready.fullBitmap.isRecycled || ready.fullBitmap.width <= 0 || ready.fullBitmap.height <= 0) return
-        _refinedCutoutBitmap.value = ready.result.cutoutBitmap?.takeIf { !it.isRecycled }
+        val composited = runCatching {
+            depthEngine.compositeEnabledLayers(
+                layers = layers,
+                width = ready.fullBitmap.width,
+                height = ready.fullBitmap.height
+            )
+        }.getOrNull()
+        _refinedCutoutBitmap.value = composited?.takeIf { !it.isRecycled }
     }
 
     private fun recomputeRefinedCutout() {
@@ -398,14 +404,26 @@ class DepthStudioViewModel(
         val feather = _maskFeather.value
         if (strokes.isEmpty()) {
             maskRefineJob?.cancel()
-            _refinedCutoutBitmap.value = ready.result.cutoutBitmap?.takeIf { !it.isRecycled }
+            val layers = _subjectLayers.value
+            val nextCutout = if (layers.size >= 2) {
+                runCatching {
+                    depthEngine.compositeEnabledLayers(layers, ready.fullBitmap.width, ready.fullBitmap.height)
+                }.getOrNull()
+            } else {
+                ready.result.cutoutBitmap
+            }
+            _refinedCutoutBitmap.value = nextCutout?.takeIf { !it.isRecycled }
             return
         }
         val targetKey = ready.key
         maskRefineJob?.cancel()
         maskRefineJob = viewModelScope.launch {
             try {
-                val baseCut = ready.result.cutoutBitmap?.takeIf { !it.isRecycled }
+                val baseCut = if (_subjectLayers.value.size >= 2) {
+                    depthEngine.compositeEnabledLayers(_subjectLayers.value, ready.fullBitmap.width, ready.fullBitmap.height)
+                } else {
+                    ready.result.cutoutBitmap
+                }?.takeIf { !it.isRecycled }
                 val refined = depthEngine.applyManualMaskRefinement(
                     sourceBitmap = ready.fullBitmap,
                     baseCutout = baseCut,
@@ -418,7 +436,7 @@ class DepthStudioViewModel(
             } catch (ce: CancellationException) {
                 throw ce
             } catch (t: Throwable) {
-                com.example.engine.crash.ZeroCrashEngine.handleCaughtException("recomputeRefinedCutout", t)
+                Log.e(TAG, "Mask refinement failed cleanly", t)
             }
         }
     }

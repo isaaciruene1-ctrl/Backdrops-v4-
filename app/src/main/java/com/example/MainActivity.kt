@@ -34,13 +34,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.example.engine.crash.ZeroCrashEngine.init(applicationContext)
         enableEdgeToEdge()
         parseDeepLinkIntent(intent)
 
         setContent {
-            com.example.engine.crash.ZeroCrashErrorBoundary {
-                var showSplashTransition by remember { mutableStateOf(true) }
+            var showSplashTransition by remember { mutableStateOf(true) }
             val iconScale = remember { Animatable(0.92f) }
             val splashAlpha = remember { Animatable(1f) }
 
@@ -85,7 +83,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-          }
         }
     }
 

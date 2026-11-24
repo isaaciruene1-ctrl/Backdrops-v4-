@@ -115,18 +115,25 @@ class DepthStudioStressTest {
         assertNull(result.cutoutBitmap)
     }
 
-    // 4. Single-subject foreground extraction and valid cutout dimensions
+    // 4. Multi-subject layer toggles & extreme intensity/offset clamping
     @Test
-    fun stress04_depthEngineSingleSubjectCutoutAndBounds() {
+    fun stress04_depthEngineMultiSubjectLayersToggleAndIntensityBounds() {
         val engine = DepthDetectionEngine()
-        val srcBmp = makeTwoTonePortraitBitmap(120, 180)
-        val result = runBlocking { engine.detectAndExtract(srcBmp, "Test Subject") }
-        assertNotNull(result)
-        val cutout = result.cutoutBitmap
-        assertNotNull(cutout)
-        assertFalse(cutout!!.isRecycled)
-        assertEquals(120, cutout.width)
-        assertEquals(180, cutout.height)
+        val l1Bmp = makeTwoTonePortraitBitmap(80, 120)
+        val l2Bmp = makeTwoTonePortraitBitmap(80, 120)
+        val layers = listOf(
+            DepthSubjectLayer("a", "FG", DepthSubjectCategory.PORTRAIT_FIGURE, l1Bmp, 0.9f, 0.9f, 0, enabled = true, depthIntensity = 5.0f, offsetXFraction = -9f),
+            DepthSubjectLayer("b", "BG", DepthSubjectCategory.SUMMIT_SILHOUETTE, l2Bmp, 0.7f, 0.8f, 1, enabled = false, depthIntensity = 0.01f, offsetYFraction = 9f)
+        )
+        val composite = engine.compositeEnabledLayers(layers, 120, 180)
+        assertNotNull(composite)
+        assertFalse(composite!!.isRecycled)
+        assertEquals(120, composite.width)
+        assertEquals(180, composite.height)
+
+        // All disabled -> null cleanly
+        val noneEnabled = engine.compositeEnabledLayers(layers.map { it.copy(enabled = false) }, 120, 180)
+        assertNull(noneEnabled)
     }
 
     // 5. Manual Mask Keep, Erase & Clear refinement with extreme feather values
