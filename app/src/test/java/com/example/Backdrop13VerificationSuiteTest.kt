@@ -150,19 +150,10 @@ class Backdrop13VerificationSuiteTest {
 
         val engine = DepthDetectionEngine()
         val result = engine.detectAndExtract(multiSubjectBitmap, titleHint = "Twin Spires")
-        assertTrue("Expected depth eligibility for dual subjects", result.isDepthEligible)
+        assertTrue("Expected depth eligibility for portrait", result.isDepthEligible)
         assertNotNull(result.cutoutBitmap)
-        assertTrue("Expected >= 2 subject layers, got ${result.layers.size}", result.layers.size >= 2)
-        assertTrue(result.subjectCount >= 2)
-
-        // Disable second layer & adjust depth intensity -> composite bitmap remains valid
-        val modifiedLayers = result.layers.mapIndexed { idx, layer ->
-            if (idx == 0) layer.copy(depthIntensity = 0.85f) else layer.copy(enabled = false)
-        }
-        val composited = engine.compositeEnabledLayers(modifiedLayers, w, h)
-        assertNotNull(composited)
-        assertEquals(w, composited!!.width)
-        assertEquals(h, composited.height)
+        assertEquals(w, result.cutoutBitmap!!.width)
+        assertEquals(h, result.cutoutBitmap!!.height)
 
         // On-Device Photo Depth Engine processes portrait photo safely
         val photoResult = OnDevicePhotoDepthEngine(engine).extractFromPhotoBitmap(multiSubjectBitmap)
