@@ -22,6 +22,12 @@ enum class MaskBrushMode {
     ERASE
 }
 
+enum class DepthScanStage(val label: String) {
+    COLOR_SAMPLING("Sampling Color Space..."),
+    BARRIER_TRACING("Tracing Geodesic Barriers..."),
+    MATTE_SYNTHESIS("Synthesizing Edge Matte...")
+}
+
 data class MaskBrushStroke(
     val normalizedPoints: List<Pair<Float, Float>>,
     val radiusFraction: Float = 0.045f,
@@ -66,12 +72,12 @@ data class DepthDetectionResult(
     val layers: List<DepthSubjectLayer> = emptyList(),
     val requiresRefinement: Boolean = false,
     val confidenceWarning: String? = null,
-    val engineSource: String = "Hybrid CIE L*a*b* Depth V2"
+    val engineSource: String = "CIE L*a*b* Depth V4 Pure"
 ) {
     val subjectCount: Int
         get() = when {
-            layers.isNotEmpty() -> layers.size
             isDepthEligible -> 1
+            layers.isNotEmpty() -> layers.size
             else -> 0
         }
 }

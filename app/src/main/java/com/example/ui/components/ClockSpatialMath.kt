@@ -111,12 +111,25 @@ object ClockSpatialMath {
                 val anchorY = startRect.topPx
                 val availW = (vw - minMarginPx - anchorX).coerceAtLeast(minBoxW)
                 val availH = (vh - minMarginPx - anchorY).coerceAtLeast(minBoxH)
-                val newW = (startRect.widthPx + totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
-                val newH = (startRect.heightPx + totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                val rawW = (startRect.widthPx + totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                val rawH = (startRect.heightPx + totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+
+                val (newW, newH) = if (!startConfig.freeStretchEnabled) {
+                    val scaleFactor = ((rawW / startRect.widthPx) + (rawH / startRect.heightPx)) * 0.5f
+                    val pw = (startRect.widthPx * scaleFactor).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                    val ph = (startRect.heightPx * scaleFactor).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                    pw to ph
+                } else {
+                    rawW to rawH
+                }
+
                 val newCenterX = anchorX + newW * 0.5f
+                val newWScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE)
+                val newHScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE)
                 startConfig.copy(
-                    widthScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE),
-                    heightScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE),
+                    scale = (newWScale + newHScale) * 0.5f,
+                    widthScale = newWScale,
+                    heightScale = newHScale,
                     offsetXFraction = (newCenterX - vw * 0.5f) / vw,
                     placementY = anchorY / vh,
                     alignment = ClockHorizontalAlign.CENTER
@@ -128,12 +141,25 @@ object ClockSpatialMath {
                 val anchorY = startRect.topPx
                 val availW = (anchorX - minMarginPx).coerceAtLeast(minBoxW)
                 val availH = (vh - minMarginPx - anchorY).coerceAtLeast(minBoxH)
-                val newW = (startRect.widthPx - totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
-                val newH = (startRect.heightPx + totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                val rawW = (startRect.widthPx - totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                val rawH = (startRect.heightPx + totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+
+                val (newW, newH) = if (!startConfig.freeStretchEnabled) {
+                    val scaleFactor = ((rawW / startRect.widthPx) + (rawH / startRect.heightPx)) * 0.5f
+                    val pw = (startRect.widthPx * scaleFactor).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                    val ph = (startRect.heightPx * scaleFactor).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                    pw to ph
+                } else {
+                    rawW to rawH
+                }
+
                 val newCenterX = anchorX - newW * 0.5f
+                val newWScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE)
+                val newHScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE)
                 startConfig.copy(
-                    widthScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE),
-                    heightScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE),
+                    scale = (newWScale + newHScale) * 0.5f,
+                    widthScale = newWScale,
+                    heightScale = newHScale,
                     offsetXFraction = (newCenterX - vw * 0.5f) / vw,
                     placementY = anchorY / vh,
                     alignment = ClockHorizontalAlign.CENTER
@@ -145,13 +171,26 @@ object ClockSpatialMath {
                 val anchorY = startRect.bottomPx
                 val availW = (vw - minMarginPx - anchorX).coerceAtLeast(minBoxW)
                 val availH = (anchorY - minMarginPx).coerceAtLeast(minBoxH)
-                val newW = (startRect.widthPx + totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
-                val newH = (startRect.heightPx - totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                val rawW = (startRect.widthPx + totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                val rawH = (startRect.heightPx - totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+
+                val (newW, newH) = if (!startConfig.freeStretchEnabled) {
+                    val scaleFactor = ((rawW / startRect.widthPx) + (rawH / startRect.heightPx)) * 0.5f
+                    val pw = (startRect.widthPx * scaleFactor).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                    val ph = (startRect.heightPx * scaleFactor).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                    pw to ph
+                } else {
+                    rawW to rawH
+                }
+
                 val newTop = anchorY - newH
                 val newCenterX = anchorX + newW * 0.5f
+                val newWScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE)
+                val newHScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE)
                 startConfig.copy(
-                    widthScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE),
-                    heightScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE),
+                    scale = (newWScale + newHScale) * 0.5f,
+                    widthScale = newWScale,
+                    heightScale = newHScale,
                     offsetXFraction = (newCenterX - vw * 0.5f) / vw,
                     placementY = newTop / vh,
                     alignment = ClockHorizontalAlign.CENTER
@@ -163,13 +202,26 @@ object ClockSpatialMath {
                 val anchorY = startRect.bottomPx
                 val availW = (anchorX - minMarginPx).coerceAtLeast(minBoxW)
                 val availH = (anchorY - minMarginPx).coerceAtLeast(minBoxH)
-                val newW = (startRect.widthPx - totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
-                val newH = (startRect.heightPx - totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                val rawW = (startRect.widthPx - totalDx).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                val rawH = (startRect.heightPx - totalDy).coerceIn(minBoxH, minOf(maxBoxH, availH))
+
+                val (newW, newH) = if (!startConfig.freeStretchEnabled) {
+                    val scaleFactor = ((rawW / startRect.widthPx) + (rawH / startRect.heightPx)) * 0.5f
+                    val pw = (startRect.widthPx * scaleFactor).coerceIn(minBoxW, minOf(maxBoxW, availW))
+                    val ph = (startRect.heightPx * scaleFactor).coerceIn(minBoxH, minOf(maxBoxH, availH))
+                    pw to ph
+                } else {
+                    rawW to rawH
+                }
+
                 val newTop = anchorY - newH
                 val newCenterX = anchorX - newW * 0.5f
+                val newWScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE)
+                val newHScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE)
                 startConfig.copy(
-                    widthScale = (newW / baseW).coerceIn(MIN_WIDTH_SCALE, MAX_WIDTH_SCALE),
-                    heightScale = (newH / baseH).coerceIn(MIN_HEIGHT_SCALE, MAX_HEIGHT_SCALE),
+                    scale = (newWScale + newHScale) * 0.5f,
+                    widthScale = newWScale,
+                    heightScale = newHScale,
                     offsetXFraction = (newCenterX - vw * 0.5f) / vw,
                     placementY = newTop / vh,
                     alignment = ClockHorizontalAlign.CENTER

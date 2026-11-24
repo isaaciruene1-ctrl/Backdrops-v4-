@@ -1175,7 +1175,7 @@ fun DepthStudioScreen(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = "Mapping Depth Contour...",
+                                    text = depthState.stage.label,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1,
@@ -1357,7 +1357,7 @@ fun DepthStudioScreen(
                                             } else {
                                                 "No isolated foreground subject above horizon"
                                             }
-                                            is DepthStudioUiState.ScanningSubject -> "Extracting geodesic subject contour..."
+                                            is DepthStudioUiState.ScanningSubject -> depthState.stage.label
                                             is DepthStudioUiState.LoadingFullBitmap -> "Loading full-resolution image..."
                                             is DepthStudioUiState.EngineError -> depthState.message
                                             is DepthStudioUiState.BitmapError -> depthState.message
@@ -2422,6 +2422,33 @@ fun DepthStudioScreen(
                                             summary = "W ${(clockConfig.widthScale * 100).roundToInt()}% • H ${(clockConfig.heightScale * 100).roundToInt()}%",
                                             testTag = "depth_clock_size_sliders_dropdown"
                                         ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = "Free Stretch",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = if (clockConfig.freeStretchEnabled) "Independent X & Y axes" else "Proportional 1:1 digit scaling",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                Switch(
+                                                    checked = clockConfig.freeStretchEnabled,
+                                                    onCheckedChange = { enabled ->
+                                                        onCommitClockConfig { it.copy(freeStretchEnabled = enabled) }
+                                                    },
+                                                    modifier = Modifier.testTag("clock_free_stretch_switch")
+                                                )
+                                            }
                                             GlassAtomicSlider(
                                                 label = "Width",
                                                 valueText = "${(clockConfig.widthScale * 100).roundToInt()}%",

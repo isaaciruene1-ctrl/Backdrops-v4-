@@ -75,6 +75,11 @@ enum class OemProfile(
         baseStatus = CompatibilityStatus.PARTIALLY_SUPPORTED,
         guidance = "Supports cover and inner displays; secure system biometric & PIN prompts always remain unobstructed."
     ),
+    INFINIX_XOS(
+        displayName = "Infinix XOS (Transsion)",
+        baseStatus = CompatibilityStatus.PARTIALLY_SUPPORTED,
+        guidance = "Supported on Infinix XOS & XOS Launcher. Enable 'Display Over Other Apps', allow 'Lock Screen Display' in Phone Master > App Management, and exempt Backdrop in Power Master auto-freeze."
+    ),
     CUSTOM_ROM(
         displayName = "Custom ROM (Lineage / Graphene / etc.)",
         baseStatus = CompatibilityStatus.PARTIALLY_SUPPORTED,
@@ -142,6 +147,9 @@ object LockScreenCompatibilityManager {
             return OemProfile.CUSTOM_ROM
         }
         return when {
+            mfr.contains("infinix") || br.contains("infinix") || mfr.contains("transsion") ||
+                br.contains("transsion") || mfr.contains("tecno") || br.contains("tecno") ||
+                mfr.contains("itel") || br.contains("itel") || disp.contains("xos") || disp.contains("hios") -> OemProfile.INFINIX_XOS
             mfr.contains("google") || br.contains("google") || mod.contains("pixel") -> OemProfile.PIXEL
             mfr.contains("samsung") || br.contains("samsung") -> OemProfile.SAMSUNG_ONE_UI
             mfr.contains("xiaomi") || br.contains("redmi") || br.contains("poco") -> OemProfile.XIAOMI_HYPEROS_MIUI
@@ -232,4 +240,22 @@ object LockScreenCompatibilityManager {
         Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
         Uri.parse("package:${context.packageName}")
     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    fun buildInfinixPhoneMasterIntent(context: Context): Intent {
+        val candidates = listOf(
+            Intent().setClassName("com.transsion.phonemanager", "com.transsion.phonemanager.MainActivity"),
+            Intent().setClassName("com.transsion.mobilemaster", "com.transsion.mobilemaster.MainActivity"),
+            Intent("com.transsion.phonemanager.AUTORUN"),
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+        )
+        val pm = context.packageManager
+        for (intent in candidates) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (intent.resolveActivity(pm) != null) {
+                return intent
+            }
+        }
+        return Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
 }

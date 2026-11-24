@@ -60,18 +60,13 @@ class OnDevicePhotoDepthEngine(
     }
 
     private fun normalizeMaxEdge(bitmap: Bitmap, maxEdge: Int): Bitmap? {
-        if (bitmap.isRecycled || bitmap.width <= 0 || bitmap.height <= 0) return null
-        val soft = if (bitmap.config == Bitmap.Config.ARGB_8888) {
-            bitmap
-        } else {
-            runCatching { bitmap.copy(Bitmap.Config.ARGB_8888, false) }.getOrNull() ?: return null
-        }
-        val longest = max(soft.width, soft.height)
-        if (longest <= maxEdge) return soft
+        val safe = com.example.engine.crash.ZeroCrashEngine.guardBitmap(bitmap, true) ?: return null
+        val longest = max(safe.width, safe.height)
+        if (longest <= maxEdge) return safe
         val ratio = maxEdge.toFloat() / longest.toFloat()
-        val w = (soft.width * ratio).roundToInt().coerceAtLeast(32)
-        val h = (soft.height * ratio).roundToInt().coerceAtLeast(32)
-        return runCatching { soft.scale(w, h) }.getOrNull() ?: soft
+        val w = (safe.width * ratio).roundToInt().coerceAtLeast(32)
+        val h = (safe.height * ratio).roundToInt().coerceAtLeast(32)
+        return runCatching { safe.scale(w, h) }.getOrNull() ?: safe
     }
 
     private fun decodeBoundedSoftwareBitmap(context: Context, uri: Uri, maxEdge: Int): Bitmap? =

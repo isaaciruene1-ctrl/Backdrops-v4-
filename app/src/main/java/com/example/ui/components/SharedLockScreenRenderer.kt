@@ -392,8 +392,9 @@ fun SharedLockScreenRenderer(
         }
 
         // 4. Widgets + Dynamic Non-Overlapping Notifications Zone
-        val clockBottomFrac = (resolvedClockBox.bottomPx / viewportPx.height.coerceAtLeast(1).toFloat())
-            .coerceIn(0.16f, 0.72f)
+        val clockBottomDp = with(density) { resolvedClockBox.bottomPx.toDp() }
+        val topClearanceDp = maxOf(clockBottomDp + 14.dp, maxHeight * 0.16f)
+        val clockBottomFrac = (topClearanceDp / maxHeight.coerceAtLeast(1.dp)).coerceIn(0.16f, 0.88f)
         val widgetReserveDp = if (hasEnabledWidgets) 128f else 0f
         val showChargingNow = chargingConfig.enabled &&
             chargingConfig.preset != ChargingAnimationPreset.OFF &&
@@ -414,7 +415,7 @@ fun SharedLockScreenRenderer(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = (maxHeight * clockBottomFrac) + 8.dp, start = 16.dp, end = 16.dp),
+                .padding(top = topClearanceDp, start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {

@@ -58,7 +58,11 @@ data class StudioHistorySnapshot(
 
 sealed interface DepthStudioUiState {
     data object LoadingFullBitmap : DepthStudioUiState
-    data class ScanningSubject(val fullBitmap: Bitmap, val subjectHint: String) : DepthStudioUiState
+    data class ScanningSubject(
+        val fullBitmap: Bitmap,
+        val subjectHint: String,
+        val stage: DepthScanStage = DepthScanStage.COLOR_SAMPLING
+    ) : DepthStudioUiState
     data class Ready(
         val key: String,
         val fullBitmap: Bitmap,
@@ -675,29 +679,40 @@ class DepthStudioViewModel(
         saveToCache: Boolean,
         forceRescan: Boolean = false
     ) {
-        if (fullBmp.isRecycled || fullBmp.width <= 0 || fullBmp.height <= 0) {
+        val safeBmp = com.example.engine.crash.ZeroCrashEngine.guardBitmap(fullBmp)
+        if (safeBmp == null) {
             _state.value = DepthStudioUiState.BitmapError("Wallpaper pixels were released before scanning.")
             return
         }
         _state.value = DepthStudioUiState.ScanningSubject(
-            fullBitmap = fullBmp,
-            subjectHint = titleHint
+            fullBitmap = safeBmp,
+            subjectHint = titleHint,
+            stage = DepthScanStage.COLOR_SAMPLING
         )
         try {
             val detection = depthEngine.detectAndExtract(
-                sourceBitmap = fullBmp,
+                sourceBitmap = safeBmp,
                 titleHint = titleHint,
-                cacheKey = if (forceRescan) null else key
+                cacheKey = if (forceRescan) null else key,
+                onStageProgress = { stage ->
+                    if (currentKey == key) {
+                        _state.value = DepthStudioUiState.ScanningSubject(
+                            fullBitmap = safeBmp,
+                            subjectHint = titleHint,
+                            stage = stage
+                        )
+                    }
+                }
             )
             if (currentKey != key) return
-            if (saveToCache && !fullBmp.isRecycled) {
-                depthCache[key] = CachedDepthEntry(key, fullBmp, detection)
+            if (saveToCache && !safeBmp.isRecycled) {
+                depthCache[key] = CachedDepthEntry(key, safeBmp, detection)
             }
             _subjectLayers.value = detection.layers
             _selectedLayerId.value = detection.layers.firstOrNull()?.id
-            _refinedCutoutBitmap.value = if (_maskStrokes.value.isNotEmpty() && !fullBmp.isRecycled) {
+            _refinedCutoutBitmap.value = if (_maskStrokes.value.isNotEmpty() && !safeBmp.isRecycled) {
                 depthEngine.applyManualMaskRefinement(
-                    sourceBitmap = fullBmp,
+                    sourceBitmap = safeBmp,
                     baseCutout = detection.cutoutBitmap,
                     strokes = _maskStrokes.value,
                     featherStrength = _maskFeather.value
@@ -707,17 +722,17 @@ class DepthStudioViewModel(
             }
             _state.value = DepthStudioUiState.Ready(
                 key = key,
-                fullBitmap = fullBmp,
+                fullBitmap = safeBmp,
                 result = detection
             )
         } catch (ce: CancellationException) {
             throw ce
         } catch (t: Throwable) {
-            Log.e(TAG, "Depth engine scan failed for $key", t)
+            com.example.engine.crash.ZeroCrashEngine.handleCaughtException("runDepthScan", t)
             if (currentKey == key) {
                 _state.value = DepthStudioUiState.EngineError(
                     key = key,
-                    fullBitmap = fullBmp,
+                    fullBitmap = safeBmp,
                     message = t.localizedMessage ?: "Depth contour scan failed."
                 )
             }

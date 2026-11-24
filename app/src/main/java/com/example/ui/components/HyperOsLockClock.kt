@@ -233,7 +233,8 @@ data class ClockDesignConfig(
     val depthOverlapEnabled: Boolean = true,
     val liquidGlass: LiquidGlassConfig = LiquidGlassConfig(),
     val scaleTextWithClock: Boolean = false,
-    val glowConfig: GlowMaterialConfig = GlowMaterialConfig()
+    val glowConfig: GlowMaterialConfig = GlowMaterialConfig(),
+    val freeStretchEnabled: Boolean = false
 ) {
     val hasCustomProportions: Boolean
         get() = kotlin.math.abs(widthScale - baselineWidthScale) > 0.02f ||
@@ -269,6 +270,7 @@ data class ClockDesignConfig(
         put("liquidGlass", liquidGlass.toJsonObject())
         put("scaleTextWithClock", scaleTextWithClock)
         put("glowConfig", glowConfig.toJsonObject())
+        put("freeStretchEnabled", freeStretchEnabled)
     }.toString()
 
     companion object {
@@ -325,7 +327,8 @@ data class ClockDesignConfig(
                     depthOverlapEnabled = obj.optBoolean("depthOverlapEnabled", true),
                     liquidGlass = glassConfig,
                     scaleTextWithClock = obj.optBoolean("scaleTextWithClock", false),
-                    glowConfig = glowCfg
+                    glowConfig = glowCfg,
+                    freeStretchEnabled = obj.optBoolean("freeStretchEnabled", false)
                 )
             }.getOrNull()
         }
